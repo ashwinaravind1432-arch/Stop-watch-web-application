@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Precision Stopwatch | SkillCraft</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* avoid accidental highlight on buttons */
+        }
+
+        body {
+            background: linear-gradient(145deg, #10141E 0%, #1A1F2C 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Roboto', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* main stopwatch card */
+        .stopwatch-card {
+            background: rgba(22, 28, 40, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+            padding: 2rem 2rem 2.2rem;
+            width: 100%;
+            max-width: 680px;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(72, 187, 255, 0.2);
+        }
+
+        /* timer glass panel */
+        .timer-display-wrapper {
+            background: #0B0E16;
+            border-radius: 48px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.6), 0 6px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2D3748;
+        }
+
+        .timer {
+            font-family: 'JetBrains Mono', 'Fira Mono', 'Courier New', monospace;
+            font-weight: 600;
+            font-size: clamp(2.8rem, 12vw, 4.8rem);
+            text-align: center;
+            letter-spacing: 4px;
+            color: #C0F2FF;
+            text-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
+            background: linear-gradient(135deg, #E0F2FE 0%, #A5F0FF 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: none;
+            background-color: #B9F3FF;
+            background-image: linear-gradient(125deg, #BFF9FF, #7AD0FF);
+        }
+
+        /* just ensure readability fallback */
+        .timer {
+            color: #B3ECFF;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* button grid */
+        .button-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 18px;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 1.25rem;
+            padding: 0.8rem 1.6rem;
+            min-width: 105px;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            background: #232A3A;
+            color: #EFF3F8;
+            box-shadow: 0 6px 0 #0F111A;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #0F111A;
+        }
+
+        .btn-primary {
+            background: #1E88E5;
+            box-shadow: 0 6px 0 #0B4B7A;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #E67E22;
+            box-shadow: 0 6px 0 #A04000;
+        }
+
+        .btn-danger {
+            background: #C0392B;
+            box-shadow: 0 6px 0 #7B241C;
+        }
+
+        .btn-secondary {
+            background: #3A4A63;
+            box-shadow: 0 6px 0 #1F2A3A;
+        }
+
+        .btn-lap {
+            background: #2C3E66;
+            box-shadow: 0 6px 0 #141E30;
+        }
+
+        .btn-clear {
+            background: #4A3F6B;
+            box-shadow: 0 6px 0 #2A1F42;
+        }
+
+        .btn:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 0 #0F111A;
+        }
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #0F111A;
+        }
+
+        /* laps section */
+        .laps-container {
+            background: rgba(12, 17, 27, 0.7);
+            border-radius: 34px;
+            padding: 1rem 0.8rem;
+            margin-top: 0.5rem;
+            border: 1px solid #2F3B52;
+            backdrop-filter: blur(4px);
+        }
+
+        .laps-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 0 1rem 0.5rem 1rem;
+            border-bottom: 1px solid #2E3A4E;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .laps-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            background: linear-gradient(120deg, #B9E6FF, #7BC5FF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.2px;
+        }
+
+        .clear-laps-btn {
+            background: #2D3448;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #FFCDB2;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: inherit;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .clear-laps-btn:hover {
+            background: #3E4762;
+            color: white;
+        }
+
+        .lap-list {
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 0 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .lap-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .lap-list::-webkit-scrollbar-track {
+            background: #191E2C;
+            border-radius: 10px;
+        }
+        .lap-list::-webkit-scrollbar-thumb {
+            background: #3F5579;
+            border-radius: 10px;
+        }
+
+        .lap-item {
+            background: #10161fcc;
+            backdrop-filter: blur(2px);
+            padding: 0.6rem 1rem;
+            border-radius: 50px;
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-left: 4px solid #3B82F6;
+            transition: 0.1s;
+            color: #CDE9FF;
+        }
+
+        .lap-number {
+            font-weight: 700;
+            background: #1E2A3E;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #A3D0FF;
+        }
+
+        .lap-time {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
+            font-weight: 500;
+            background: #00000030;
+            padding: 2px 12px;
+            border-radius: 36px;
+        }
+
+        .empty-laps {
+            text-align: center;
+            padding: 2rem 0.5rem;
+            color: #95A9C9;
+            font-size: 0.95rem;
+            font-style: italic;
+            letter-spacing: 0.3px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #5D6F8F;
+        }
+
+        @media (max-width: 500px) {
+            .stopwatch-card {
+                padding: 1.5rem;
+            }
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 1rem;
+                min-width: 80px;
+            }
+            .button-panel {
+                gap: 12px;
+            }
+            .lap-time {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="stopwatch-card">
+    <div class="timer-display-wrapper">
+        <div class="timer" id="timerDisplay">00:00:00.00</div>
+    </div>
+
+    <div class="button-panel">
+        <button class="btn btn-primary" id="startBtn" aria-label="Start stopwatch">▶ Start</button>
+        <button class="btn btn-warning" id="pauseBtn" aria-label="Pause stopwatch">⏸ Pause</button>
+        <button class="btn btn-danger" id="resetBtn" aria-label="Reset stopwatch">🔄 Reset</button>
+        <button class="btn btn-lap" id="lapBtn" aria-label="Record lap">⏱️ Lap</button>
+    </div>
+
+    <div class="laps-container">
+        <div class="laps-header">
+            <span class="laps-title">📋 Lap Times</span>
+            <button class="clear-laps-btn" id="clearLapsBtn">🗑 Clear all laps</button>
+        </div>
+        <div class="lap-list" id="lapListContainer">
+            <div class="empty-laps">— No laps recorded —<br>Press [Lap] to mark interval</div>
+        </div>
+    </div>
+    <footer>⚡ accurate timing · lap tracking · precision intervals</footer>
+</div>
+
+<script>
+    // ======================== STOPWATCH CORE ==========================
+    // Time in milliseconds
+    let running = false;
+    let startTimestamp = 0;          // performance.now() reference for current active session
+    let accumulatedTime = 0;         // elapsed time stored when paused / before start (ms)
+    let animationFrameId = null;
+    
+    // Laps storage: each element is elapsed milliseconds at the moment of lap
+    let lapsArray = [];               // stores raw milliseconds
+    
+    // DOM elements
+    const timerDisplay = document.getElementById('timerDisplay');
+    const lapListContainer = document.getElementById('lapListContainer');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const lapBtn = document.getElementById('lapBtn');
+    const clearLapsBtn = document.getElementById('clearLapsBtn');
+    
+    // ========== HELPER: format milliseconds to HH:MM:SS.cc (centiseconds) ==========
+    function formatTime(ms) {
+        if (ms < 0) ms = 0;
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const centiseconds = Math.floor((ms % 1000) / 10);
+        
+        // pad each segment
+        const pad = (num, digits = 2) => String(num).padStart(digits, '0');
+        
+        // Hours always show at least two digits, but can expand (if >99, still fine)
+        const formattedHours = pad(hours, 2);
+        const formattedMinutes = pad(minutes, 2);
+        const formattedSeconds = pad(seconds, 2);
+        const formattedCs = pad(centiseconds, 2);
+        
+        return `${formattedHours}:${formattedMinutes}:${formattedSeconds}.${formattedCs}`;
+    }
+    
+    // get current elapsed time based on running state (always accurate)
+    function getCurrentElapsedMs() {
+        if (running) {
+            // active session: accumulated base + delta from startTimestamp
+            const now = performance.now();
+            return accumulatedTime + (now - startTimestamp);
+        } else {
+            return accumulatedTime;
+        }
+    }
+    
+    // update the main timer display using current elapsed
+    function updateDisplay() {
+        const elapsedMs = getCurrentElapsedMs();
+        timerDisplay.textContent = formatTime(elapsedMs);
+    }
+    
+    // render laps list from lapsArray (raw ms)
+    function renderLaps() {
+        if (!lapListContainer) return;
+        
+        if (lapsArray.length === 0) {
+            lapListContainer.innerHTML = `<div class="empty-laps">— No laps recorded —<br>Press [Lap] to mark interval</div>`;
+            return;
+        }
+        
+        // create list
+        const fragment = document.createDocumentFragment();
+        lapsArray.forEach((lapMs, idx) => {
+            const lapDiv = document.createElement('div');
+            lapDiv.className = 'lap-item';
+            
+            const lapNumberSpan = document.createElement('span');
+            lapNumberSpan.className = 'lap-number';
+            lapNumberSpan.textContent = `Lap ${idx + 1}`;
+            
+            const lapTimeSpan = document.createElement('span');
+            lapTimeSpan.className = 'lap-time';
+            lapTimeSpan.textContent = formatTime(lapMs);
+            
+            lapDiv.appendChild(lapNumberSpan);
+            lapDiv.appendChild(lapTimeSpan);
+            fragment.appendChild(lapDiv);
+        });
+        
+        // clear and append fresh
+        lapListContainer.innerHTML = '';
+        lapListContainer.appendChild(fragment);
+    }
+    
+    // core update loop using requestAnimationFrame (smooth, exact)
+    function startUpdateLoop() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        
+        function updateLoop() {
+            if (running) {
+                updateDisplay();
+                animationFrameId = requestAnimationFrame(updateLoop);
+            } else {
+                animationFrameId = null;
+            }
+        }
+        
+        animationFrameId = requestAnimationFrame(updateLoop);
+    }
+    
+    // ========== ACTIONS ==========
+    function startTimer() {
+        if (running) return;   // already running
+        
+        // if accumulatedTime is zero or any valid value, begin new measuring session
+        running = true;
+        startTimestamp = performance.now();
+        startUpdateLoop();
+    }
+    
+    function pauseTimer() {
+        if (!running) return;
+        
+        // Capture final elapsed time into accumulatedTime before stopping
+        const now = performance.now();
+        accumulatedTime += (now - startTimestamp);
+        running = false;
+        
+        // cancel animation frame
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        // ensure display shows final paused time exactly
+        updateDisplay();
+    }
+    
+    function resetTimer() {
+        // stop timer completely
+        if (running) {
+            pauseTimer();     // pause captures current accumulated, but we want full reset
+            // After pauseTimer, accumulatedTime holds the whole elapsed value, we need to force zero
+            // But we still need to be careful: we use extra reset logic (override)
+        }
+        // Cancel potential running flag (even after pause, running false)
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        // hard reset values
+        running = false;
+        accumulatedTime = 0;
+        startTimestamp = 0;
+        // reset laps array
+        lapsArray = [];
+        renderLaps();
+        // refresh display to 0
+        updateDisplay();
+    }
+    
+    function recordLap() {
+        // get current precise elapsed time
+        const currentLapTime = getCurrentElapsedMs();
+        // add to laps array
+        lapsArray.push(currentLapTime);
+        renderLaps();
+        
+        // subtle micro animation: optional – just to give feedback, no errors 
+        if (lapBtn) {
+            lapBtn.style.transform = 'scale(0.97)';
+            setTimeout(() => { if(lapBtn) lapBtn.style.transform = ''; }, 120);
+        }
+    }
+    
+    function clearAllLaps() {
+        lapsArray = [];
+        renderLaps();
+    }
+    
+    // ========== EVENT BINDINGS & INIT ==========
+    function initEventListeners() {
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        lapBtn.addEventListener('click', recordLap);
+        if (clearLapsBtn) {
+            clearLapsBtn.addEventListener('click', clearAllLaps);
+        }
+    }
+    
+    // extra protection: ensure display is always correct after reset or pause
+    function initialRender() {
+        accumulatedTime = 0;
+        running = false;
+        startTimestamp = 0;
+        lapsArray = [];
+        updateDisplay();
+        renderLaps();
+    }
+    
+    // optional: when page hidden we don't need to drift but everything stays accurate
+    // because performance.now based on monotonic clock, no drift. So no extra visibility handler needed.
+    
+    // Add a tiny double-check: if any resize or accidental, keep display consistent
+    function safeLoopCheck() {
+        // This ensures if the timer is running but UI update missed (edge), every 200ms not needed,
+        // but requestAnimationFrame covers. Additional guard for extreme cases: when running but animationFrame missing? 
+        // we set interval fallback? No need, but we make sure after start, loop runs.
+        // However if startTimer is called, startUpdateLoop sets up frame. Good.
+    }
+    
+    // Disable contextmenu on buttons for clean interaction
+    const allBtns = [startBtn, pauseBtn, resetBtn, lapBtn, clearLapsBtn];
+    allBtns.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+    });
+    
+    // initialize stopwatch
+    initEventListeners();
+    initialRender();
+    
+    // Extra security: ensure that if stopwatch is running and user resets via resetBtn, correct.
+    // Reset already handles resetting accumulatedTime, laps and stopping all.
+    // Also start after reset: accumulatedTime = 0, start new session perfectly.
+    
+    // For demonstration: handle if someone clicks lap many times while paused or running, it records frozen or moving time correctly
+    // All good: getCurrentElapsedMs() uses latest running state.
+    
+    // Edge case: reset while running, we call pauseTimer inside reset (which sets accumulated + stop)
+    // but then we override accumulatedTime=0, and cancel frame again, final display 0, laps cleared. Correct.
+    // Also we must be careful: if reset uses pauseTimer and then set accumulatedTime=0, the original paused accumulation is overwritten. Perfect.
+    // However, we need to ensure 'running' false after reset, and no leftover frames.
+    // Additional test: If reset while paused, running = false, we set accumulatedTime=0 and update display, laps cleared.
+    // Great.
+    
+    // Also provide friendly keyboard enhancement (optional but fun), but main spec: start/pause/reset/lap buttons fully functional
+    // with precise time intervals & lap tracking.
+    
+    (function preventDoubleFrame() {
+        // ensure no leftover animation frames after reset edge
+        const originalReset = resetTimer;
+        window.resetTimerSafe = originalReset;
+    })();
+    
+    // Option: synchronize if page visibility changes (to avoid unnecessary updates)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && running) {
+            // when tab becomes active again, need to recalibrate startTimestamp because performance.now still continuous.
+            // The timing may lose coherence due to the fact startTimestamp was used before hidden? Actually 
+            // performance.now() continues even when tab inactive, but the update loop is suspended while hidden (rAF stops). 
+            // We recalc: store delta now.
+            if (running) {
+                // adjust start timestamp to avoid time jumps: we have accumulatedTime and running true
+                // the previous startTimestamp is old, we need to shift startTimestamp to now without loosing elapsed 
+                const currentTrueElapsed = accumulatedTime + (performance.now() - startTimestamp);
+                // reset the reference but maintain accumulatedTime
+                accumulatedTime = currentTrueElapsed;
+                startTimestamp = performance.now();
+                // update display instantly
+                updateDisplay();
+                // loop continues thanks to rAF reactivation, but we re-sync
+            }
+        }
+    });
+    
+    // tiny fix for cleaner reset: ensure after reset we never have any frame left
+    // also on start ensure that if already loop active, doesn't double
+    const origStart = startTimer;
+    startTimer = function() {
+        if (!running) {
+            origStart.call(this);
+        }
+    }.bind(this);
+    startBtn.removeEventListener('click', startTimer);
+    startBtn.addEventListener('click', startTimer);
+    
+    // Make everything globally robust
+    console.log('Stopwatch Ready | SkillCraft Technology');
+</script>
+</body>
+</html>
